@@ -10,6 +10,8 @@ import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import Typography from '@material-ui/core/Typography';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 
+import UserPanel from './userPanel.js';
+
 function App() {
     return (
         <div className="App">
@@ -21,6 +23,7 @@ function App() {
                         <Tab label="Players" />
                     </Tabs>
                 </AppBar>
+                <UserPanel />
             </div>
             <header className="App-page">
                 <div className="App-content">
