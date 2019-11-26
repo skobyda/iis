@@ -44,7 +44,7 @@ class Register extends React.Component {
     register() {
         const { email, nick, password, gender, birthdate } = this.state;
         const data = { email, nick, password, gender, birthdate };
-        const jsonStr = JSON.stringify(data);
+        const jsonStr = JSON.stringify({ action: "register", data: data });
 
         console.log(jsonStr);
         // TODO call backend
