@@ -3,40 +3,53 @@
 require_once 'backend_functions.php';
 
 
-
 $json = file_get_contents('php://input'); // Read POST as raw data
 
-if ($json == "" && $_REQUEST['JS'] != "") {
+if ($json == "" && isset($_REQUEST['JS']) && $_REQUEST['JS'] != "") {
     $json = $_REQUEST['JS'];
 }
 
-//var_dump($json);
-
 $data = json_decode($json, true);
 
+
+$backend = new Backend;
 switch ($data['action']) {
     case 'login':
-        $response = login($data['arguments']);
+        $response = $backend->login($data['arguments']);
         break;
 
     case 'register':
-        $response = register($data['arguments']);
+        $response = $backend->register($data['arguments']);
+        break;
+    
+    case 'editPlayer':
+        $response = $backend->set_player($data['arguments']);
         break;
     
     case 'getPlayer':
-        $response = get_player($data['arguments']);
+        $response = $backend->get_player($data['arguments']);
         break;
     
+    
+    
+    
+    
+    
+    
     case 'getTournament':
-        $response = get_tournament($data['arguments']);
+        $response = $backend->get_tournament($data['arguments']);
         break;
     
     case 'getTeam':
-        $response = get_team($data['arguments']);
+        $response = $backend->get_team($data['arguments']);
+        break;
+    
+    case '':
+        $response = $backend->error('JSON - action not specified!');
         break;
     
     default:
-        $response = error('Invalid request!');
+        $response = $backend->error('Invalid request!');
         break;
 }
 
