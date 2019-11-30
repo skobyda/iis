@@ -1,13 +1,13 @@
 CREATE DATABASE IF NOT EXISTS IIS1;
 USE IIS1;
-create table user_(id integer AUTO_INCREMENT, first_name varchar(50), second_name varchar(50),password varchar(100), mail varchar(100),active boolean, country_code varchar(2), born date,sex ENUM('F', 'M', 'N'),  photo blob, primary key(id));
+create table user_(id integer AUTO_INCREMENT,nick varchar(50), first_name varchar(50), second_name varchar(50),password varchar(100), mail varchar(100),active boolean, country_code varchar(2), born date,sex ENUM('F', 'M', 'N'),  photo blob, primary key(id));
 create table player(id integer AUTO_INCREMENT, user_id integer, actual_p_rank double, highest_p_rank double, height double, weight double, played_side ENUM('Both', 'Right', 'Left'), coach varchar(100), primary key(id));
-create table tournament(id integer AUTO_INCREMENT, name_ varchar(100), max_n_of_teams int, required_n_of_players int, prizes varchar(200), tournament_age_category enum('Adults','Everyone','Juniors','Seniors'), tournament_sex_category enum('F', 'M', 'N'), registration_fee double,logo blob, founder_id int, state enum('open','ready_to_play','ongoing','played'),actual_rank int, primary key(id));
+create table tournament(id integer AUTO_INCREMENT, name_ varchar(100), max_n_of_teams int, required_n_of_players int, prizes varchar(200), tournament_age_category enum('Adults','Everyone','Juniors','Seniors'), tournament_sex_category enum('F', 'M', 'N'), registration_fee double,logo blob, founder_id int, state enum('open','ready_to_play','ongoing','played'), primary key(id));
 create table team (id int AUTO_INCREMENT,founder_id integer, name_ varchar(100), logo blob,funded date,active boolean, primary key(id));
-create table team_tournament(id int AUTO_INCREMENT,tournament_id int, team_id int, tournament_pos int,primary key(id));
+create table team_tournament(id int AUTO_INCREMENT,tournament_id int, team_id int, tournament_pos int, confirmed boolean, primary key(id));
 create table rating_team(wins int, losses int, fan_rat double, info varchar(100), team_tournament_id int, match_id int, primary key(team_tournament_id,match_id));
 create table ref_tournament(tournament_id int, user_id int, primary key(tournament_id,user_id));
-create table player_team(team_id int, player_id int,primary key(player_id, team_id));
+create table player_team(team_id int, player_id int,confirmed boolean,primary key(player_id, team_id));
 create table ref_match(match_id int, user_id int, ref_rat double, primary key(match_id, user_id));
 create table rating_player(kills int, deaths int, assists int, headshots int, fan_rat double, money_spent decimal(5), player_id int, match_id int, ban varchar(150), info varchar(150), primary key(player_id, match_id));
 create table match_(id int AUTO_INCREMENT, date_of_play TIMESTAMP, place varchar(100), ticket_prize decimal(7,2),tournament_id int, primary key(id)); -- match blbne!
