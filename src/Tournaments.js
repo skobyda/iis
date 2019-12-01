@@ -18,6 +18,11 @@ import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
 import ListItemText from '@material-ui/core/ListItemText';
 import Checkbox from '@material-ui/core/Checkbox';
 
+import Box from '@material-ui/core/Box';
+import TextField from '@material-ui/core/TextField';
+import MenuItem from '@material-ui/core/MenuItem';
+import Grid from '@material-ui/core/Grid';
+
 import './styles.css';
 
 function getTournaments() {
@@ -29,6 +34,298 @@ function getTournaments() {
     '{"id":3,"name":"Counter-Strike Girlz","maxNumOfTeams":16,"requiredNumOfPlayers":5,"prizes":"1. 50000eur, 2. 10000eur, 3. 2000eur","tournamentAgeCategory":"Casual","tournamentSexCategory":"F","registrationFee":"500eur","founderId":42,"requests":[]}]';
 
     return JSON.parse(tournamentsJSON);
+}
+
+const TournamentBody = ({ id, state, onValueChanged }) => { 
+    return (<>
+        <Box m={1} component="span" display="block">
+            <TextField id={id + "-name"}
+                label="Name"
+                value={state.name}
+                onChange={e => onValueChanged("name", e.target.value)}
+                fullWidth
+                />
+        </Box>
+        <Box m={1} component="span" display="block">
+            <TextField id={id + "-requiredNumOfPlayers"}
+                label="Players per team"
+                value={state.requiredNumOfPlayers}
+                onChange={e => onValueChanged("requiredNumOfPlayers", e.target.value)}
+                type="number"
+                fullWidth
+            />
+        </Box>
+        <Box m={1} component="span" display="block">
+            <TextField id={id + "-maxNumOfTeams"}
+                label="Max number of teams"
+                value={state.maxNumOfTeams}
+                onChange={e => onValueChanged("maxNumOfTeams", e.target.value)}
+                type="number"
+                fullWidth
+            />
+        </Box>
+        <Box m={1} component="span" display="block">
+            <TextField id={id + "-prizes"}
+                label="Prizes"
+                value={state.prizes}
+                onChange={e => onValueChanged("prizes", e.target.value)}
+                fullWidth
+            />
+        </Box>
+        <Box m={1} component="span" display="block">
+            <TextField id={id + "-tournamentAgeCategory"}
+                select
+                label="Age category"
+                value={state.tournamentAgeCategory}
+                onChange={e => onValueChanged("tournamentAgeCategory", e.target.value)}
+                fullWidth
+            >
+                <MenuItem key={"Casual"} value={"Casual"}>
+                  {"Casual"}
+                </MenuItem>
+                <MenuItem key={"Junior"} value={"Junior"}>
+                  {"Junior"}
+                </MenuItem>
+            </TextField>
+        </Box>
+        <Box m={1} component="span" display="block">
+            <TextField id={id + "-tournamentSexCategory"}
+                select
+                label="Sex category"
+                value={state.tournamentSexCategory}
+                onChange={e => onValueChanged("tournamentSexCategory", e.target.value)}
+                fullWidth
+            >
+                <MenuItem key={"F"} value={"F"}>
+                  {"Female"}
+                </MenuItem>
+                <MenuItem key={"M"} value={"M"}>
+                  {"Male"}
+                </MenuItem>
+            </TextField>
+        </Box>
+        <Box m={1} component="span" display="block">
+            <TextField id={id + "-registrationFee"}
+                label="Registration fee"
+                value={state.registrationFee}
+                onChange={e => onValueChanged("registrationFee", e.target.value)}
+                fullWidth
+            />
+        </Box>
+    </>);
+}
+
+class CreateTournament extends React.Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            showModal: false,
+            name: "",
+            maxNumOfTeams: 8,
+            tournamentAgeCategory: "",
+            tournamentSexCategory: "",
+            requiredNumOfPlayers: 5,
+            prizes: "",
+            registrationFee: "",
+        };
+
+        this.open = this.open.bind(this);
+        this.close = this.close.bind(this);
+        this.onValueChanged = this.onValueChanged.bind(this);
+        this.create = this.create.bind(this);
+    }
+
+    onValueChanged(key, value) {
+        this.setState({ [key]: value });
+    }
+
+    close() {
+        this.setState({ showModal: false, dialogError: undefined });
+    }
+
+    open() {
+        this.setState({ showModal: true });
+    }
+
+    create() {
+        const { name, maxNumOfTeams, tournamentAgeCategory, tournamentSexCategory, requiredNumOfPlayers, prizes, registrationFee } = this.state;
+        const data = { name, maxNumOfTeams, tournamentAgeCategory, tournamentSexCategory, requiredNumOfPlayers, prizes, registrationFee };
+        const jsonStr = JSON.stringify(data);
+
+        console.log("Create Tournament API. Passed data:");
+        console.log(jsonStr);
+        // TODO backend
+    }
+
+    render() {
+        const id = "create";
+        return (
+            <>
+                <Button onClick={this.open} variant="contained" color="primary">Create Tournament</Button>
+                <Dialog open={this.state.showModal}
+                    onClose={this.close}
+                    aria-labelledby={id + "-modal"}
+                    maxWidth={'sm'}
+                    fullWidth
+                >
+                    <DialogTitle id={id + "-modal-title"}>Create Tournament</DialogTitle>
+                    <DialogContent>
+                        <TournamentBody id={id}
+                            state={this.state}
+                            onValueChanged={this.onValueChanged} />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button id={id + "-action-close"} onClick={this.close} color="default">
+                            Close
+                        </Button>
+                        <Button id={id + "-action-create"} onClick={this.create} color="primary">
+                            Create
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            </>
+        );
+    }
+}
+
+class EditTournament extends React.Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            showModal: false,
+            name: props.tournament.name,
+            maxNumOfTeams: props.tournament.maxNumOfTeams,
+            tournamentAgeCategory: props.tournament.tournamentAgeCategory,
+            tournamentSexCategory: props.tournament.tournamentSexCategory,
+            requiredNumOfPlayers: props.tournament.requiredNumOfPlayers,
+            prizes: props.tournament.prizes,
+            registrationFee: props.tournament.registrationFee,
+        };
+
+        this.open = this.open.bind(this);
+        this.close = this.close.bind(this);
+        this.onValueChanged = this.onValueChanged.bind(this);
+        this.save = this.save.bind(this);
+    }
+
+    onValueChanged(key, value) {
+        this.setState({ [key]: value });
+    }
+
+    close() {
+        this.setState({ showModal: false, dialogError: undefined });
+    }
+
+    open() {
+        this.setState({ showModal: true });
+    }
+
+    save() {
+        const { name, maxNumOfTeams, tournamentAgeCategory, tournamentSexCategory, requiredNumOfPlayers, prizes, registrationFee } = this.state;
+        const id = this.props.tournament.id;
+        const data = { id, name, maxNumOfTeams, tournamentAgeCategory, tournamentSexCategory, requiredNumOfPlayers, prizes, registrationFee };
+        const jsonStr = JSON.stringify(data);
+
+        console.log("Edit Tournament API. Passed data:");
+        console.log(jsonStr);
+        // TODO backend
+    }
+
+    render() {
+        const id = this.props.tournament.id + "-edit";
+        return (
+            <>
+                <Button onClick={this.open} variant="contained">Edit</Button>
+                <Dialog open={this.state.showModal}
+                    onClose={this.close}
+                    aria-labelledby={id + "-modal"}
+                    maxWidth={'sm'}
+                    fullWidth
+                >
+                    <DialogTitle id={id + "-modal-title"}>Edit Tournament Details</DialogTitle>
+                    <DialogContent>
+                        <TournamentBody id={id}
+                            state={this.state}
+                            onValueChanged={this.onValueChanged} />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button id={id + "-action-close"} onClick={this.close} color="default">
+                            Close
+                        </Button>
+                        <Button id={id + "-action-save"} onClick={this.save} color="primary">
+                            Save
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            </>
+        );
+    }
+}
+
+class DeleteTournament extends React.Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            showModal: false,
+        };
+
+        this.open = this.open.bind(this);
+        this.close = this.close.bind(this);
+        this.onValueChanged = this.onValueChanged.bind(this);
+        this.delete = this.delete.bind(this);
+    }
+
+    onValueChanged(key, value) {
+        this.setState({ [key]: value });
+    }
+
+    close() {
+        this.setState({ showModal: false, dialogError: undefined });
+    }
+
+    open() {
+        this.setState({ showModal: true });
+    }
+
+    delete() {
+        const data = { id: this.props.tournament.id };
+        const jsonStr = JSON.stringify(data);
+
+        console.log("Delete Tournament API. Passed data:");
+        console.log(jsonStr);
+        // TODO backend
+    }
+
+    render() {
+        const id = this.props.tournament.id + "-delete";
+        return (
+            <>
+                <Button onClick={this.open} variant="contained" color="secondary">Delete</Button>
+                <Dialog open={this.state.showModal}
+                    onClose={this.close}
+                    aria-labelledby={id + "-modal"}
+                    maxWidth={'sm'}
+                    fullWidth
+                >
+                    <DialogTitle id={id + "-modal-title"}>Tournament Deletion</DialogTitle>
+                    <DialogContent>
+                        Do you really wish to delete this tournament?
+                    </DialogContent>
+                    <DialogActions>
+                        <Button id={id + "-action-close"} onClick={this.close} color="default">
+                            Close
+                        </Button>
+                        <Button id={id + "-action-delete"} onClick={this.delete} color="secondary">
+                            Delete
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            </>
+        );
+    }
 }
 
 class SignupAsReferee extends React.Component {
@@ -376,6 +673,8 @@ export default class Tournaments extends React.Component {
                       <RequestsTournament tournament={tournament}/>
                       <JoinTournament tournament={tournament}/>
                       <SignupAsReferee tournament={tournament}/>
+                      <EditTournament tournament={tournament}/>
+￼                     <DeleteTournament tournament={tournament}/>
                   </ExpansionPanelActions>
                 </ExpansionPanel>
             );
@@ -384,9 +683,16 @@ export default class Tournaments extends React.Component {
         const body = this.state.tournaments.map(tournament => TournamentPanel(tournament));
 
         return(
-            <>
-                { body }
-            </>
+            <Grid container spacing={3}>
+￼                 <Grid item xs={12}>
+￼                     <Box display="flex" css={{ float: "right" }}>
+￼                         <CreateTournament />
+￼                     </Box>
+￼                 </Grid>
+￼                 <Grid item xs={12}>
+￼                     { body }
+￼                 </Grid>
+￼             </Grid>
         );
     };
 }
