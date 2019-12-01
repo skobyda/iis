@@ -22,6 +22,8 @@ class App extends React.Component {
 
         this.state = {
             page: 0,
+            loggedUser: undefined,
+            users: [],
         };
 
         this.onValueChanged = this.onValueChanged.bind(this);
@@ -31,8 +33,21 @@ class App extends React.Component {
         this.setState({ [key]: value });
     }
 
+    componentDidMount() {
+        const onValueChanged = this.onValueChanged;
+        const request= new XMLHttpRequest();
+        request.onreadystatechange = function() {
+            if (this.readyState === 4 && this.status === 200) {
+                const users = JSON.parse(this.responseText);
+                onValueChanged("users", users);
+            }
+        }
+        request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+        request.send('{"action":"getPlayer","arguments":{"active":1}}');
+    }
+
     render() {
-        const { page } = this.state;
+        const { loggedUser, page } = this.state;
 
         return (
             <div className="App">
@@ -47,13 +62,13 @@ class App extends React.Component {
                             <Tab label="Players" />
                         </Tabs>
                     </AppBar>
-                    <UserPanel />
+                    <UserPanel appOnValueChanged={this.onValueChanged} loggedUser={loggedUser} />
                 </div>
                 <header className="App-page">
                     <div className="App-content">
                         { page === menu.TOURNAMENTS && <Tournaments /> }
                         { page === menu.TEAMS && <Teams /> }
-                        { page === menu.PLAYERS && <Players /> }
+                        { page === menu.PLAYERS && <Players users={this.state.users} /> }
                     </div>
                 </header>
             </div>

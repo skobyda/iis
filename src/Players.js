@@ -43,16 +43,19 @@ export default class Players extends React.Component {
 
     render() {
         const PlayerPanel = (player) => {
-            const teamsStr = player.teams.join(", ");
+            const teams = player.teams;
+            let teamsStr;
+            if (teams)
+                teamsStr = teams.join(", ");
 
             return (
-                <ExpansionPanel key={player.id}>
+                <ExpansionPanel key={player.nick}>
                   <ExpansionPanelSummary
                     expandIcon={<ExpandMoreIcon />}
                     aria-controls="panel1c-content"
                     id="panel1c-header"
                   >
-                      { player.id }
+                      { player.nick }
                   </ExpansionPanelSummary>
                   <ExpansionPanelDetails>
                       <table id="my-table">
@@ -63,13 +66,14 @@ export default class Players extends React.Component {
                               <th></th>
                             </tr>
                             <tr>
-                              <td><b>Name:</b> { player.fullName }</td>
+                              <td><b>Name:</b> { player.name }</td>
+                              <td><b>Surname:</b> { player.surname }</td>
                               <td><b>Team(s):</b> { teamsStr } </td>
                             </tr>
                             <tr>
-                              <td><b>Country:</b> { player.countryCode }</td>
-                              <td><b>Born:</b> { player.born }</td>
-                              <td><b>Sex:</b> { player.sex === "M"
+                              <td><b>Country:</b> { player.country }</td>
+                              <td><b>Born:</b> { player.birthDate }</td>
+                              <td><b>Sex:</b> { player.gender === "M"
                                                 ? "Male" : "Female" }</td>
                             </tr>
                             <tr>
@@ -86,7 +90,8 @@ export default class Players extends React.Component {
             );
         };
 
-        const body = this.state.players.map(player => PlayerPanel(player));
+        // const body = this.state.players.map(player => PlayerPanel(player));
+        const body = this.props.users.map(player => PlayerPanel(player));
 
         return(
             <>
