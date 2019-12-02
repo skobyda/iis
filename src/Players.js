@@ -55,6 +55,7 @@ class Edit extends React.Component {
     }
 
     edit() {
+        const close = this.close;
         const appOnValueChanged = this.props.appOnValueChanged;
         const onValueChanged = this.onValueChanged;
         const { email, nick, name, surname, password, gender, birthDate, country } = this.state;
@@ -70,10 +71,9 @@ class Edit extends React.Component {
         const request= new XMLHttpRequest();
         request.onreadystatechange = function() {
             if (this.readyState === 4 && this.status === 200) {
-                console.log(this.responseText);
                 const response = JSON.parse(this.responseText);
 
-                if (response.result) {
+                if (response.result && response.result !== "Error") {
                     const request= new XMLHttpRequest();
                     request.onreadystatechange = function() {
                         if (this.readyState === 4 && this.status === 200) {
@@ -81,15 +81,15 @@ class Edit extends React.Component {
                             appOnValueChanged("users", users);
                         }
                     }
-                    request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+                    request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
                     request.send('{"action":"getPlayer","arguments":{"active":1}}');
+                    close();
                 } else {
                     onValueChanged("errorMessage", response.message);
                 }
             }
         }
-        request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
-        console.log(callStr);
+        request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
         request.send(callStr);
     }
 
@@ -223,7 +223,14 @@ export default class Players extends React.Component {
         const PlayerPanel = (player) => {
             if (!player.nick)
                 return null;
-            const teams = player.teams;
+            let teams = this.props.teams.filter(t => {
+                for (let i = 0; i < t.players.length; i++) {
+                    if (t.players[i].nick === player.nick)
+                        return true;
+                }
+                return false;
+            });
+            teams = teams.map(t => t.name);
             let teamsStr;
             if (teams)
                 teamsStr = teams.join(", ");
@@ -255,11 +262,6 @@ export default class Players extends React.Component {
                               <td><b>Born:</b> { player.birthDate }</td>
                               <td><b>Sex:</b> { player.gender === "M"
                                                 ? "Male" : "Female" }</td>
-                            </tr>
-                            <tr>
-                              <td><b>Referee rating:</b> { player.refereeRat }</td>
-                              <td><b>Current player rank:</b> { player.actualPRank }</td>
-                              <td><b>Highest player rank:</b> { player.highestPRank }</td>
                             </tr>
                         </tbody>
                       </table>

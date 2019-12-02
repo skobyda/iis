@@ -38,6 +38,7 @@ class Delete extends React.Component {
     }
 
     delete() {
+        const close = this.close;
         const appOnValueChanged = this.props.appOnValueChanged;
         const { email, nick } = this.state;
         const data = { email, nick, active: 0 };
@@ -50,10 +51,9 @@ class Delete extends React.Component {
         const request= new XMLHttpRequest();
         request.onreadystatechange = function() {
             if (this.readyState === 4 && this.status === 200) {
-                console.log(this.responseText);
                 const response = JSON.parse(this.responseText);
 
-                if (response.result) {
+                if (response.result && response.result !== "Error") {
                     appOnValueChanged("loggedUser", null);
                     const request= new XMLHttpRequest();
                     request.onreadystatechange = function() {
@@ -62,13 +62,13 @@ class Delete extends React.Component {
                             appOnValueChanged("users", users);
                         }
                     }
-                    request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+                    request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
                     request.send('{"action":"getPlayer","arguments":{"active":1}}');
                 }
+                close();
             }
         }
-        request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
-        console.log(callStr);
+        request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
         request.send(callStr);
     }
 
@@ -202,6 +202,8 @@ class EditProfile extends React.Component {
     }
 
     editProfile() {
+        const close = this.close;
+        const onValueChanged = this.onValueChanged;
         const appOnValueChanged = this.props.appOnValueChanged;
         const { email, nick, name, surname, password, gender, birthDate, country } = this.state;
         const data = { email, nick, name, surname, gender, birthDate, country };
@@ -216,10 +218,9 @@ class EditProfile extends React.Component {
         const request= new XMLHttpRequest();
         request.onreadystatechange = function() {
             if (this.readyState === 4 && this.status === 200) {
-                console.log(this.responseText);
                 const response = JSON.parse(this.responseText);
 
-                if (response.result) {
+                if (response.result && response.result !== "Error") {
                     const data = { email };
                     const call = {
                         action: "getPlayer",
@@ -232,17 +233,17 @@ class EditProfile extends React.Component {
                             const response = JSON.parse(this.responseText);
 
                             appOnValueChanged("loggedUser", response[0]);
-                            console.log(response[0]);
                         }
                     }
-                    request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+                    request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
                     //request.setRequestHeader("Content-type", "application/json");
                     request.send(callStr);
-                }
+                    close();
+                } else
+                    onValueChanged("errorMessage", response.message);
             }
         }
-        request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
-        console.log(callStr);
+        request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
         request.send(callStr);
     }
 
@@ -341,6 +342,10 @@ class EditProfile extends React.Component {
                                 fullWidth
                             />
                         </Box>
+                        <span style={{ color: "red" }}>
+                            { this.state.errorMessage && (<br />) }
+                            { this.state.errorMessage }
+                        </span>
                     </DialogContent>
                     <DialogActions>
                         <Button id={id + "-action-close"} onClick={this.close} color="default">
@@ -405,15 +410,14 @@ class Register extends React.Component {
             if (this.readyState === 4 && this.status === 200) {
                 const response = JSON.parse(this.responseText);
 
-                if (response.result)
+                if (response.result && response.result !== "Error")
                     close();
                 else
                     onValueChanged("errorMessage", response.message);
 
             }
         }
-        request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
-        console.log(callStr);
+        request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
         request.send(callStr);
     }
 
@@ -448,15 +452,6 @@ class Register extends React.Component {
                                 label="Password"
                                 value={this.state.password}
                                 onChange={e => this.onValueChanged("password", e.target.value)}
-                                type="password"
-                                fullWidth
-                            />
-                        </Box>
-                        <Box m={1} component="span" display="block">
-                            <TextField id={id + "-repeat-password"}
-                                label="Repeat password"
-                                value={this.state.repeatPassword}
-                                onChange={e => this.onValueChanged("repeatPassword", e.target.value)}
                                 type="password"
                                 fullWidth
                             />
@@ -509,6 +504,8 @@ class Login extends React.Component {
     }
 
     login() {
+        const close = this.close;
+        const onValueChanged = this.onValueChanged;
         const appOnValueChanged = this.props.appOnValueChanged;
         const { email, password } = this.state;
         const data = { email, password };
@@ -523,7 +520,7 @@ class Login extends React.Component {
             if (this.readyState === 4 && this.status === 200) {
                 const response = JSON.parse(this.responseText);
 
-                if (response.result) {
+                if (response.result && response.result !== "Error") {
                     const data = { email };
                     const call = {
                         action: "getPlayer",
@@ -533,20 +530,20 @@ class Login extends React.Component {
                     const request= new XMLHttpRequest();
                     request.onreadystatechange = function() {
                         if (this.readyState === 4 && this.status === 200) {
-                            console.log(this.responseText);
                             const response = JSON.parse(this.responseText);
 
                             appOnValueChanged("loggedUser", response[0]);
-                            console.log(response[0]);
                         }
                     }
-                    request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+                    request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
                     //request.setRequestHeader("Content-type", "application/json");
                     request.send(callStr);
-                }
+                    close();
+                } else
+                    onValueChanged("errorMessage", response.message);
             }
         }
-        request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+        request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
         //request.setRequestHeader("Content-type", "application/json");
         request.send(callStr);
     }
@@ -583,6 +580,10 @@ class Login extends React.Component {
                                 fullWidth
                             />
                         </Box>
+                        <span style={{ color: "red" }}>
+                            { this.state.errorMessage && (<br />) }
+                            { this.state.errorMessage }
+                        </span>
                     </DialogContent>
                     <DialogActions>
                         <Button id={id + "-action-close"} onClick={this.close} color="default">

@@ -25,17 +25,6 @@ import Grid from '@material-ui/core/Grid';
 
 import './styles.css';
 
-function getTournaments() {
-    // TODO api call to get Tournaments
-
-    // API returns JSON string like this:
-    const tournamentsJSON = '[{"id":1,"name":"KATOWICE 2020","maxNumOfTeams":8,"requiredNumOfPlayers":5,"prizes":"1. 50000eur, 2. 10000eur, 3. 2000eur","tournamentAgeCategory":"Junior","tournamentSexCategory":"M","registrationFee":"500eur","founderId":42,"requests":["Ninjas in Pyjamas","Furia Esports"]},' +
-    '{"id":2,"name":"CSGO International","maxNumOfTeams":10,"requiredNumOfPlayers":6,"prizes":"1. 10000eur, 2. 5000eur, 3. 2000eur","tournamentAgeCategory":"Casual","tournamentSexCategory":"M","registrationFee":"100eur","founderId":32,"requests":[]},' +
-    '{"id":3,"name":"Counter-Strike Girlz","maxNumOfTeams":16,"requiredNumOfPlayers":5,"prizes":"1. 50000eur, 2. 10000eur, 3. 2000eur","tournamentAgeCategory":"Casual","tournamentSexCategory":"F","registrationFee":"500eur","founderId":42,"requests":[]}]';
-
-    return JSON.parse(tournamentsJSON);
-}
-
 const TournamentBody = ({ id, state, onValueChanged }) => { 
     return (<>
         <Box m={1} component="span" display="block">
@@ -47,19 +36,19 @@ const TournamentBody = ({ id, state, onValueChanged }) => {
                 />
         </Box>
         <Box m={1} component="span" display="block">
-            <TextField id={id + "-requiredNumOfPlayers"}
+            <TextField id={id + "-teamSize"}
                 label="Players per team"
-                value={state.requiredNumOfPlayers}
-                onChange={e => onValueChanged("requiredNumOfPlayers", e.target.value)}
+                value={state.teamSize}
+                onChange={e => onValueChanged("teamSize", e.target.value)}
                 type="number"
                 fullWidth
             />
         </Box>
         <Box m={1} component="span" display="block">
-            <TextField id={id + "-maxNumOfTeams"}
+            <TextField id={id + "-capacity"}
                 label="Max number of teams"
-                value={state.maxNumOfTeams}
-                onChange={e => onValueChanged("maxNumOfTeams", e.target.value)}
+                value={state.capacity}
+                onChange={e => onValueChanged("capacity", e.target.value)}
                 type="number"
                 fullWidth
             />
@@ -73,29 +62,38 @@ const TournamentBody = ({ id, state, onValueChanged }) => {
             />
         </Box>
         <Box m={1} component="span" display="block">
-            <TextField id={id + "-tournamentAgeCategory"}
+            <TextField id={id + "-ageCategory"}
                 select
                 label="Age category"
-                value={state.tournamentAgeCategory}
-                onChange={e => onValueChanged("tournamentAgeCategory", e.target.value)}
+                value={state.ageCategory}
+                onChange={e => onValueChanged("ageCategory", e.target.value)}
                 fullWidth
             >
-                <MenuItem key={"Casual"} value={"Casual"}>
-                  {"Casual"}
+                <MenuItem key={"Everyone"} value={"Everyone"}>
+                  {"Everyone"}
                 </MenuItem>
-                <MenuItem key={"Junior"} value={"Junior"}>
-                  {"Junior"}
+                <MenuItem key={"Juniors"} value={"Juniors"}>
+                  {"Juniors"}
+                </MenuItem>
+                <MenuItem key={"Adults"} value={"Adults"}>
+                  {"Adults"}
+                </MenuItem>
+                <MenuItem key={"Seniors"} value={"Seniors"}>
+                  {"Seniors"}
                 </MenuItem>
             </TextField>
         </Box>
         <Box m={1} component="span" display="block">
-            <TextField id={id + "-tournamentSexCategory"}
+            <TextField id={id + "-sexCategory"}
                 select
                 label="Sex category"
-                value={state.tournamentSexCategory}
-                onChange={e => onValueChanged("tournamentSexCategory", e.target.value)}
+                value={state.sexCategory}
+                onChange={e => onValueChanged("sexCategory", e.target.value)}
                 fullWidth
             >
+                <MenuItem key={"N"} value={"N"}>
+                  {"All"}
+                </MenuItem>
                 <MenuItem key={"F"} value={"F"}>
                   {"Female"}
                 </MenuItem>
@@ -106,10 +104,11 @@ const TournamentBody = ({ id, state, onValueChanged }) => {
         </Box>
         <Box m={1} component="span" display="block">
             <TextField id={id + "-registrationFee"}
-                label="Registration fee"
+                label="Registration fee (eur)"
                 value={state.registrationFee}
                 onChange={e => onValueChanged("registrationFee", e.target.value)}
                 fullWidth
+                type="number"
             />
         </Box>
     </>);
@@ -122,12 +121,12 @@ class CreateTournament extends React.Component {
         this.state = {
             showModal: false,
             name: "",
-            maxNumOfTeams: 8,
-            tournamentAgeCategory: "",
-            tournamentSexCategory: "",
-            requiredNumOfPlayers: 5,
+            capacity: 8,
+            ageCategory: "Everyone",
+            sexCategory: "N",
+            teamSize: 5,
             prizes: "",
-            registrationFee: "",
+            registrationFee: 0,
         };
 
         this.open = this.open.bind(this);
@@ -149,13 +148,40 @@ class CreateTournament extends React.Component {
     }
 
     create() {
-        const { name, maxNumOfTeams, tournamentAgeCategory, tournamentSexCategory, requiredNumOfPlayers, prizes, registrationFee } = this.state;
-        const data = { name, maxNumOfTeams, tournamentAgeCategory, tournamentSexCategory, requiredNumOfPlayers, prizes, registrationFee };
-        const jsonStr = JSON.stringify(data);
+        const close = this.close;
+        const appOnValueChanged = this.props.appOnValueChanged;
+        const onValueChanged = this.onValueChanged;
+        const { name, capacity, ageCategory, sexCategory, teamSize, prizes, registrationFee } = this.state;
+        const data = { email: this.props.loggedUser.email, name, capacity, ageCategory, sexCategory, teamSize, prizes, registrationFee };
+        const call = {
+            action: "createTournament",
+            arguments: data
+        };
+        const callStr = JSON.stringify(call);
 
-        console.log("Create Tournament API. Passed data:");
-        console.log(jsonStr);
-        // TODO backend
+        const request= new XMLHttpRequest();
+        request.onreadystatechange = function() {
+            if (this.readyState === 4 && this.status === 200) {
+                const response = JSON.parse(this.responseText);
+
+                if (response.result && response.result !== "Error") {
+                    const request= new XMLHttpRequest();
+                    request.onreadystatechange = function() {
+                        if (this.readyState === 4 && this.status === 200) {
+                            const tournaments = JSON.parse(this.responseText);
+                            appOnValueChanged("tournaments", tournaments);
+                        }
+                    }
+                    request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+                    request.send('{"action":"getTournament","arguments":{"active":1}}');
+                    close();
+                } else {
+                    onValueChanged("errorMessage", response.message);
+                }
+            }
+        }
+        request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+        request.send(callStr);
     }
 
     render() {
@@ -174,6 +200,10 @@ class CreateTournament extends React.Component {
                         <TournamentBody id={id}
                             state={this.state}
                             onValueChanged={this.onValueChanged} />
+                        <span style={{ color: "red" }}>
+                            { this.state.errorMessage && (<br />) }
+                            { this.state.errorMessage }
+                        </span>
                     </DialogContent>
                     <DialogActions>
                         <Button id={id + "-action-close"} onClick={this.close} color="default">
@@ -196,10 +226,10 @@ class EditTournament extends React.Component {
         this.state = {
             showModal: false,
             name: props.tournament.name,
-            maxNumOfTeams: props.tournament.maxNumOfTeams,
-            tournamentAgeCategory: props.tournament.tournamentAgeCategory,
-            tournamentSexCategory: props.tournament.tournamentSexCategory,
-            requiredNumOfPlayers: props.tournament.requiredNumOfPlayers,
+            capacity: props.tournament.capacity,
+            ageCategory: props.tournament.ageCategory,
+            sexCategory: props.tournament.sexCategory,
+            teamSize: props.tournament.teamSize,
             prizes: props.tournament.prizes,
             registrationFee: props.tournament.registrationFee,
         };
@@ -223,14 +253,42 @@ class EditTournament extends React.Component {
     }
 
     save() {
-        const { name, maxNumOfTeams, tournamentAgeCategory, tournamentSexCategory, requiredNumOfPlayers, prizes, registrationFee } = this.state;
-        const id = this.props.tournament.id;
-        const data = { id, name, maxNumOfTeams, tournamentAgeCategory, tournamentSexCategory, requiredNumOfPlayers, prizes, registrationFee };
-        const jsonStr = JSON.stringify(data);
+        const close = this.close;
+        const appOnValueChanged = this.props.appOnValueChanged;
+        const onValueChanged = this.onValueChanged;
+        const { name, capacity, ageCategory, sexCategory, teamSize, prizes, registrationFee } = this.state;
+        const data = { name: this.props.tournament.name, capacity, ageCategory, sexCategory, teamSize, prizes, registrationFee };
+        if (this.props.tournament.name !== name)
+            data.newName = name;
+        const call = {
+            action: "editTournament",
+            arguments: data
+        };
+        const callStr = JSON.stringify(call);
 
-        console.log("Edit Tournament API. Passed data:");
-        console.log(jsonStr);
-        // TODO backend
+        const request= new XMLHttpRequest();
+        request.onreadystatechange = function() {
+            if (this.readyState === 4 && this.status === 200) {
+                const response = JSON.parse(this.responseText);
+
+                if (response.result && response.result !== "Error") {
+                    const request= new XMLHttpRequest();
+                    request.onreadystatechange = function() {
+                        if (this.readyState === 4 && this.status === 200) {
+                            const tournaments = JSON.parse(this.responseText);
+                            appOnValueChanged("tournaments", tournaments);
+                        }
+                    }
+                    request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+                    request.send('{"action":"getTournament","arguments":{"active":1}}');
+                    close();
+                } else {
+                    onValueChanged("errorMessage", response.message);
+                }
+            }
+        }
+        request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+        request.send(callStr);
     }
 
     render() {
@@ -249,6 +307,10 @@ class EditTournament extends React.Component {
                         <TournamentBody id={id}
                             state={this.state}
                             onValueChanged={this.onValueChanged} />
+                        <span style={{ color: "red" }}>
+                            { this.state.errorMessage && (<br />) }
+                            { this.state.errorMessage }
+                        </span>
                     </DialogContent>
                     <DialogActions>
                         <Button id={id + "-action-close"} onClick={this.close} color="default">
@@ -256,70 +318,6 @@ class EditTournament extends React.Component {
                         </Button>
                         <Button id={id + "-action-save"} onClick={this.save} color="primary">
                             Save
-                        </Button>
-                    </DialogActions>
-                </Dialog>
-            </>
-        );
-    }
-}
-
-class DeleteTournament extends React.Component {
-    constructor(props) {
-        super(props);
-
-        this.state = {
-            showModal: false,
-        };
-
-        this.open = this.open.bind(this);
-        this.close = this.close.bind(this);
-        this.onValueChanged = this.onValueChanged.bind(this);
-        this.delete = this.delete.bind(this);
-    }
-
-    onValueChanged(key, value) {
-        this.setState({ [key]: value });
-    }
-
-    close() {
-        this.setState({ showModal: false, dialogError: undefined });
-    }
-
-    open() {
-        this.setState({ showModal: true });
-    }
-
-    delete() {
-        const data = { id: this.props.tournament.id };
-        const jsonStr = JSON.stringify(data);
-
-        console.log("Delete Tournament API. Passed data:");
-        console.log(jsonStr);
-        // TODO backend
-    }
-
-    render() {
-        const id = this.props.tournament.id + "-delete";
-        return (
-            <>
-                <Button onClick={this.open} variant="contained" color="secondary">Delete</Button>
-                <Dialog open={this.state.showModal}
-                    onClose={this.close}
-                    aria-labelledby={id + "-modal"}
-                    maxWidth={'sm'}
-                    fullWidth
-                >
-                    <DialogTitle id={id + "-modal-title"}>Tournament Deletion</DialogTitle>
-                    <DialogContent>
-                        Do you really wish to delete this tournament?
-                    </DialogContent>
-                    <DialogActions>
-                        <Button id={id + "-action-close"} onClick={this.close} color="default">
-                            Close
-                        </Button>
-                        <Button id={id + "-action-delete"} onClick={this.delete} color="secondary">
-                            Delete
                         </Button>
                     </DialogActions>
                 </Dialog>
@@ -355,12 +353,39 @@ class SignupAsReferee extends React.Component {
     }
 
     join() {
-        const data = { id: this.props.tournament.id };
-        const jsonStr = JSON.stringify(data);
+        const close = this.close;
+        const appOnValueChanged = this.props.appOnValueChanged;
+        const onValueChanged = this.onValueChanged;
+        const data = { tournament: this.props.tournament.name, email: this.props.loggedUser.email };
+        const call = {
+            action: "addReferee",
+            arguments: data
+        };
+        const callStr = JSON.stringify(call);
 
-        console.log("Join Tournament API. Passed data:");
-        console.log(jsonStr);
-        // TODO backend
+        const request= new XMLHttpRequest();
+        request.onreadystatechange = function() {
+            if (this.readyState === 4 && this.status === 200) {
+                const response = JSON.parse(this.responseText);
+
+                if (response.result && response.result !== "Error") {
+                    const request= new XMLHttpRequest();
+                    request.onreadystatechange = function() {
+                        if (this.readyState === 4 && this.status === 200) {
+                            const tournaments = JSON.parse(this.responseText);
+                            appOnValueChanged("tournaments", tournaments);
+                        }
+                    }
+                    request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+                    request.send('{"action":"getTournament","arguments":{"active":1}}');
+                    close();
+                } else {
+                    onValueChanged("errorMessage", response.message);
+                }
+            }
+        }
+        request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+        request.send(callStr);
     }
 
     render() {
@@ -376,14 +401,18 @@ class SignupAsReferee extends React.Component {
                 >
                     <DialogTitle id={id + "-modal-title"}>Sign Up as a Referee</DialogTitle>
                     <DialogContent>
-                        Submit a request to join as a referee?
+                        Join as a referee?
+                        <span style={{ color: "red" }}>
+                            { this.state.errorMessage && (<br />) }
+                            { this.state.errorMessage }
+                        </span>
                     </DialogContent>
                     <DialogActions>
                         <Button id={id + "-action-close"} onClick={this.close} color="default">
                             Close
                         </Button>
-                        <Button id={id + "-action-join"} onClick={this.join} color="secondary">
-                            Submit
+                        <Button id={id + "-action-join"} onClick={this.join} color="primary">
+                            Join
                         </Button>
                     </DialogActions>
                 </Dialog>
@@ -398,13 +427,18 @@ class JoinTournament extends React.Component {
 
         this.state = {
             showModal: false,
-            teams: ["Ninjas in Pyjamas", "Furia Esports"],
+            teams: props.loggedUsersTeams,
             selected: [],
         };
 
         this.open = this.open.bind(this);
         this.close = this.close.bind(this);
         this.submit = this.submit.bind(this);
+        this.onValueChanged = this.onValueChanged.bind(this);
+    }
+
+    onValueChanged(key, value) {
+        this.setState({ [key]: value });
     }
 
     close() {
@@ -416,15 +450,39 @@ class JoinTournament extends React.Component {
     }
 
     submit() {
-        const selected = this.state.selected;
-        const id = this.props.tournament.id;
-        const data = { id, selected };
-        const jsonStr = JSON.stringify(data);
+        const close = this.close;
+        const appOnValueChanged = this.props.appOnValueChanged;
+        const onValueChanged = this.onValueChanged;
+        const data = { tournament: this.props.tournament.name, team: this.state.selected[0] };
+        const call = {
+            action: "joinTournament",
+            arguments: data
+        };
+        const callStr = JSON.stringify(call);
 
-        console.log("Join Tournament Accepted API. Passed data:");
-        console.log(jsonStr);
+        const request= new XMLHttpRequest();
+        request.onreadystatechange = function() {
+            if (this.readyState === 4 && this.status === 200) {
+                const response = JSON.parse(this.responseText);
 
-        this.close();
+                if (response.result && response.result !== "Error") {
+                    const request= new XMLHttpRequest();
+                    request.onreadystatechange = function() {
+                        if (this.readyState === 4 && this.status === 200) {
+                            const tournaments = JSON.parse(this.responseText);
+                            appOnValueChanged("tournaments", tournaments);
+                        }
+                    }
+                    request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+                    request.send('{"action":"getTournament","arguments":{"active":1}}');
+                    close();
+                } else {
+                    onValueChanged("errorMessage", response.message);
+                }
+            }
+        }
+        request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+        request.send(callStr);
     }
 
     render() {
@@ -456,17 +514,17 @@ class JoinTournament extends React.Component {
                     <DialogContent>
                         Choose a team to sign up for a tournament:
                         <List>
-                          {this.state.teams.map(value => {
-                            const labelId = `checkbox-list-label-${value}`;
+                          {this.state.teams.map(team => {
+                            const labelId = `checkbox-list-label-${team.name}`;
 
                             return (
-                              <ListItem key={value} role={undefined} dense button onClick={handleToggle(value)}>
-                                <ListItemText id={labelId} primary={`${value}`} />
+                              <ListItem key={team.name} role={undefined} dense button onClick={handleToggle(team.name)}>
+                                <ListItemText id={labelId} primary={`${team.name}`} />
                                 <ListItemSecondaryAction>
                                   <Checkbox
                                     edge="start"
-                                    checked={this.state.selected.indexOf(value) !== -1}
-                                    onChange={handleToggle(value)}
+                                    checked={this.state.selected.indexOf(team.name) !== -1}
+                                    onChange={handleToggle(team.name)}
                                     tabIndex={-1}
                                     disableRipple
                                     inputProps={{ 'aria-labelledby': labelId }}
@@ -476,143 +534,17 @@ class JoinTournament extends React.Component {
                             );
                           })}
                         </List>
+                        <span style={{ color: "red" }}>
+                            { this.state.errorMessage && (<br />) }
+                            { this.state.errorMessage }
+                        </span>
                     </DialogContent>
                     <DialogActions>
                         <Button id={id + "-action-close"} onClick={this.close} color="default">
                             Close
                         </Button>
                         <Button id={id + "-action-submit"} onClick={this.submit} color="primary">
-                            Submit Request
-                        </Button>
-                    </DialogActions>
-                </Dialog>
-            </>
-        );
-    }
-}
-
-class RequestsTournament extends React.Component {
-    constructor(props) {
-        super(props);
-
-        this.state = {
-            showModal: false,
-            players: props.tournament.players,
-            selected: [],
-            requests: props.tournament.requests,
-        };
-
-        this.open = this.open.bind(this);
-        this.close = this.close.bind(this);
-        this.accept = this.accept.bind(this);
-        this.deny = this.deny.bind(this);
-    }
-
-    close() {
-        this.setState({ showModal: false, dialogError: undefined });
-    }
-
-    open() {
-        this.setState({ showModal: true });
-    }
-
-    accept() {
-        const selected = this.state.selected;
-        const id = this.props.tournament.id;
-        const data = { id, selected };
-        const jsonStr = JSON.stringify(data);
-
-        console.log("Requests Tournament Accepted API. Passed data:");
-        console.log(jsonStr);
-
-        const newRequests = [];
-
-        this.props.tournament.requests.forEach(req => {
-            if (!selected.includes(req))
-                newRequests.push(req);
-        });
-        console.log(newRequests);
-        this.setState({ requests: newRequests });
-      // TODO backend
-    }
-
-    deny() {
-        const selected = this.state.selected;
-        const id = this.props.tournament.id;
-        const data = { id, selected };
-        const jsonStr = JSON.stringify(data);
-
-        console.log("Requests Tournament Declined API. Passed data:");
-        console.log(jsonStr);
-        // TODO backend
-
-        const newRequests = [];
-
-        this.props.tournament.requests.forEach(req => {
-            if (!selected.includes(req))
-                newRequests.push(req);
-        });
-        this.setState({ requests: newRequests });
-    }
-
-    render() {
-        const tournament = this.props.tournament;
-        const id = tournament.id + "-requests";
-
-        const handleToggle = value => () => {
-          const currentIndex = this.state.selected.indexOf(value);
-          const newChecked = [...this.state.selected];
-
-          if (currentIndex === -1)
-            newChecked.push(value);
-          else
-            newChecked.splice(currentIndex, 1);
-
-          this.setState({ selected: newChecked });
-        };
-
-        return (
-            <>
-                <Button onClick={this.open} variant="contained" disabled={tournament.requests.length === 0} color={tournament.requests.length ? "primary" : "default"}>{tournament.requests.length} Requests</Button>
-                <Dialog open={this.state.showModal}
-                    onClose={this.close}
-                    aria-labelledby={id + "-modal"}
-                    maxWidth={'sm'}
-                    fullWidth
-                >
-                    <DialogTitle id={id + "-modal-title"}>Teams Requesting Participation in Tournament</DialogTitle>
-                    <DialogContent>
-                        <List>
-                          {this.state.requests.map(value => {
-                            const labelId = `checkbox-list-label-${value}`;
-
-                            return (
-                              <ListItem key={value} role={undefined} dense button onClick={handleToggle(value)}>
-                                <ListItemText id={labelId} primary={`${value}`} />
-                                <ListItemSecondaryAction>
-                                  <Checkbox
-                                    edge="start"
-                                    checked={this.state.selected.indexOf(value) !== -1}
-                                    onChange={handleToggle(value)}
-                                    tabIndex={-1}
-                                    disableRipple
-                                    inputProps={{ 'aria-labelledby': labelId }}
-                                  />
-                                </ListItemSecondaryAction>
-                              </ListItem>
-                            );
-                          })}
-                        </List>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button id={id + "-action-close"} onClick={this.close} color="default">
-                            Close
-                        </Button>
-                        <Button id={id + "-action-accept"} onClick={this.accept} color="primary">
-                            Accept Selected
-                        </Button>
-                        <Button id={id + "-action-deny"} onClick={this.deny} color="secondary">
-                            Deny Selected
+                            Register Team
                         </Button>
                     </DialogActions>
                 </Dialog>
@@ -625,10 +557,6 @@ export default class Tournaments extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = {
-            tournaments: getTournaments()
-        };
-
         this.onValueChanged = this.onValueChanged.bind(this);
     }
 
@@ -638,8 +566,18 @@ export default class Tournaments extends React.Component {
 
     render() {
         const TournamentPanel = (tournament) => {
+            let loggedUsersTeams = [];
+            if (this.props.loggedUser)
+                loggedUsersTeams = this.props.teams.filter(t => t.founder === this.props.loggedUser.email);
+
+            const teams = tournament.teams.map(t => t.name);
+            const teamsStr = teams.join(', ')
+
+            const referees = tournament.referees.map(t => t.email);
+            const refereesStr = referees.join(', ')
+
             return (
-                <ExpansionPanel key={tournament.id}>
+                <ExpansionPanel key={tournament.name}>
                   <ExpansionPanelSummary
                     expandIcon={<ExpandMoreIcon />}
                     aria-controls="panel1c-content"
@@ -656,43 +594,48 @@ export default class Tournaments extends React.Component {
                               <th></th>
                             </tr>
                             <tr>
-                              <td><b>Max number of teams:</b> { tournament.maxNumOfTeams }</td>
-                              <td><b>Age category:</b> { tournament.tournamentAgeCategory }</td>
-                              <td><b>Sex category:</b> { tournament.tournamentSexCategory === "M"
-                                                         ? "Male" : "Female" }</td>
+                              <td><b>Max number of teams:</b> { tournament.capacity }</td>
+                              <td><b>Age category:</b> { tournament.ageCategory }</td>
+                              <td><b>Sex category:</b> { tournament.sexCategory === "M"
+                                                         ? "Male" : tournament.sexCategory === "F" ? "Female" : "Everyone" }</td>
                             </tr>
                             <tr>
-                              <td><b>Team size:</b> { tournament.requiredNumOfPlayers } players</td>
+                              <td><b>Team size:</b> { tournament.teamSize } players</td>
                               <td><b>Prize:</b> { tournament.prizes }</td>
-                              <td><b>Registration fee:</b> { tournament.registrationFee }</td>
+                              <td><b>Registration fee:</b> { tournament.registrationFee } eur</td>
+                            </tr>
+                            <tr>
+                              <td><b>Referee(s):</b> { refereesStr }</td>
+                              <td><b>Teams:</b> { teamsStr }</td>
                             </tr>
                         </tbody>
                       </table>
                   </ExpansionPanelDetails>
+                  {this.props.loggedUser &&
                   <ExpansionPanelActions>
-                      <RequestsTournament tournament={tournament}/>
-                      <JoinTournament tournament={tournament}/>
-                      <SignupAsReferee tournament={tournament}/>
-                      <EditTournament tournament={tournament}/>
-￼                     <DeleteTournament tournament={tournament}/>
-                  </ExpansionPanelActions>
+                      <JoinTournament tournament={tournament} loggedUser={this.props.loggedUser} appOnValueChanged={this.props.appOnValueChanged} loggedUsersTeams={loggedUsersTeams}/>
+                      <SignupAsReferee tournament={tournament} loggedUser={this.props.loggedUser} appOnValueChanged={this.props.appOnValueChanged}/>
+                      {((this.props.loggedUser.email === tournament.founder) || (this.props.loggedUser.nick === "admin")) &&
+                      <EditTournament tournament={tournament} appOnValueChanged={this.props.appOnValueChanged}/>}
+                  </ExpansionPanelActions>}
                 </ExpansionPanel>
             );
         };
 
-        const body = this.state.tournaments.map(tournament => TournamentPanel(tournament));
+        const body = this.props.tournaments.map(tournament => TournamentPanel(tournament));
 
         return(
             <Grid container spacing={3}>
-￼                 <Grid item xs={12}>
-￼                     <Box display="flex" css={{ float: "right" }}>
-￼                         <CreateTournament />
-￼                     </Box>
-￼                 </Grid>
-￼                 <Grid item xs={12}>
-￼                     { body }
-￼                 </Grid>
-￼             </Grid>
+                {this.props.loggedUser &&
+                <Grid item xs={12}>
+                    <Box display="flex" css={{ float: "right" }}>
+                        <CreateTournament  loggedUser={this.props.loggedUser} appOnValueChanged={this.props.appOnValueChanged}/>
+                    </Box>
+                </Grid>}
+                <Grid item xs={12}>
+                    { body }
+                </Grid>
+            </Grid>
         );
     };
 }

@@ -61,6 +61,7 @@ class CreateTeam extends React.Component {
     }
 
     create() {
+        const close = this.close;
         const appOnValueChanged = this.props.appOnValueChanged;
         const onValueChanged = this.onValueChanged;
         const { name} = this.state;
@@ -74,10 +75,9 @@ class CreateTeam extends React.Component {
         const request= new XMLHttpRequest();
         request.onreadystatechange = function() {
             if (this.readyState === 4 && this.status === 200) {
-                console.log(this.responseText);
                 const response = JSON.parse(this.responseText);
 
-                if (response.result) {
+                if (response.result && response.result !== "Error") {
                     const request= new XMLHttpRequest();
                     request.onreadystatechange = function() {
                         if (this.readyState === 4 && this.status === 200) {
@@ -85,14 +85,15 @@ class CreateTeam extends React.Component {
                             appOnValueChanged("teams", teams);
                         }
                     }
-                    request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+                    request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
                     request.send('{"action":"getTeam","arguments":{"active":1}}');
+                    close();
                 } else {
                     onValueChanged("errorMessage", response.message);
                 }
             }
         }
-        request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+        request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
         request.send(callStr);
     }
 
@@ -160,6 +161,7 @@ class EditTeam extends React.Component {
     }
 
     save() {
+        const close = this.close;
         const appOnValueChanged = this.props.appOnValueChanged;
         const onValueChanged = this.onValueChanged;
         const { name} = this.state;
@@ -174,10 +176,9 @@ class EditTeam extends React.Component {
             const request= new XMLHttpRequest();
             request.onreadystatechange = function() {
                 if (this.readyState === 4 && this.status === 200) {
-                    console.log(this.responseText);
                     const response = JSON.parse(this.responseText);
 
-                    if (response.result) {
+                    if (response.result && response.result !== "Error") {
                         const request= new XMLHttpRequest();
                         request.onreadystatechange = function() {
                             if (this.readyState === 4 && this.status === 200) {
@@ -185,15 +186,15 @@ class EditTeam extends React.Component {
                                 appOnValueChanged("teams", teams);
                             }
                         }
-                        request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+                        request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
                         request.send('{"action":"getTeam","arguments":{"active":1}}');
+                        close();
                     } else {
                         onValueChanged("errorMessage", response.message);
                     }
                 }
             }
-            request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
-            console.log(callStr);
+            request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
             request.send(callStr);
         }
         this.close();
@@ -215,6 +216,10 @@ class EditTeam extends React.Component {
                         <TeamBody id={id}
                             state={this.state}
                             onValueChanged={this.onValueChanged} />
+                        <span style={{ color: "red" }}>
+                            { this.state.errorMessage && (<br />) }
+                            { this.state.errorMessage }
+                        </span>
                     </DialogContent>
                     <DialogActions>
                         <Button id={id + "-action-close"} onClick={this.close} color="default">
@@ -257,6 +262,7 @@ class LeaveTeam extends React.Component {
     }
 
     join() {
+        const close = this.close;
         const appOnValueChanged = this.props.appOnValueChanged;
         const onValueChanged = this.onValueChanged;
         const data = { email: this.props.loggedUser.email, team: this.props.team.name };
@@ -269,10 +275,9 @@ class LeaveTeam extends React.Component {
         const request= new XMLHttpRequest();
         request.onreadystatechange = function() {
             if (this.readyState === 4 && this.status === 200) {
-                console.log(this.responseText);
                 const response = JSON.parse(this.responseText);
 
-                if (response.result) {
+                if (response.result && response.result !== "Error") {
                     const request= new XMLHttpRequest();
                     request.onreadystatechange = function() {
                         if (this.readyState === 4 && this.status === 200) {
@@ -280,14 +285,15 @@ class LeaveTeam extends React.Component {
                             appOnValueChanged("teams", teams);
                         }
                     }
-                    request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+                    request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
                     request.send('{"action":"getTeam","arguments":{"active":1}}');
+                    close();
                 } else {
                     onValueChanged("errorMessage", response.message);
                 }
             }
         }
-        request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+        request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
         request.send(callStr);
     }
 
@@ -305,6 +311,10 @@ class LeaveTeam extends React.Component {
                     <DialogTitle id={id + "-modal-title"}>Leave Team</DialogTitle>
                     <DialogContent>
                         Leave this team?
+                        <span style={{ color: "red" }}>
+                            { this.state.errorMessage && (<br />) }
+                            { this.state.errorMessage }
+                        </span>
                     </DialogContent>
                     <DialogActions>
                         <Button id={id + "-action-close"} onClick={this.close} color="default">
@@ -347,6 +357,7 @@ class JoinTeam extends React.Component {
     }
 
     join() {
+        const close = this.close;
         const appOnValueChanged = this.props.appOnValueChanged;
         const onValueChanged = this.onValueChanged;
         const data = { email: this.props.loggedUser.email, team: this.props.team.name };
@@ -359,10 +370,9 @@ class JoinTeam extends React.Component {
         const request= new XMLHttpRequest();
         request.onreadystatechange = function() {
             if (this.readyState === 4 && this.status === 200) {
-                console.log(this.responseText);
                 const response = JSON.parse(this.responseText);
 
-                if (response.result) {
+                if (response.result && response.result !== "Error") {
                     const request= new XMLHttpRequest();
                     request.onreadystatechange = function() {
                         if (this.readyState === 4 && this.status === 200) {
@@ -370,14 +380,15 @@ class JoinTeam extends React.Component {
                             appOnValueChanged("teams", teams);
                         }
                     }
-                    request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+                    request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
                     request.send('{"action":"getTeam","arguments":{"active":1}}');
+                    close();
                 } else {
                     onValueChanged("errorMessage", response.message);
                 }
             }
         }
-        request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+        request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
         request.send(callStr);
     }
 
@@ -395,6 +406,10 @@ class JoinTeam extends React.Component {
                     <DialogTitle id={id + "-modal-title"}>Request Team Membership</DialogTitle>
                     <DialogContent>
                         Join this team?
+                        <span style={{ color: "red" }}>
+                            { this.state.errorMessage && (<br />) }
+                            { this.state.errorMessage }
+                        </span>
                     </DialogContent>
                     <DialogActions>
                         <Button id={id + "-action-close"} onClick={this.close} color="default">
@@ -423,7 +438,7 @@ export default class Teams extends React.Component {
 
     render() {
         const TeamPanel = (team) => {
-            const players = team.players.map(p => p.nick);
+            const players = team.players.map(p => p.nick ? p.nick : p.emal);
             const playersStr = players.join(", ");
 
             return (

@@ -32,6 +32,12 @@ class App extends React.Component {
     }
 
     onValueChanged(key, value) {
+        if (["tournaments", "teams"].includes(key)) {
+            value.sort((a, b) => a.name > b.name);
+        }
+        if (["users"].includes(key))
+            value.sort((a, b) => a.nick > b.nick);
+
         this.setState({ [key]: value });
     }
 
@@ -44,7 +50,7 @@ class App extends React.Component {
                 onValueChanged("users", users);
             }
         }
-        request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+        request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
         request.send('{"action":"getPlayer","arguments":{"active":1}}');
 
         request= new XMLHttpRequest();
@@ -54,7 +60,7 @@ class App extends React.Component {
                 onValueChanged("teams", users);
             }
         }
-        request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+        request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
         request.send('{"action":"getTeam","arguments":{"active":1}}');
 
         request= new XMLHttpRequest();
@@ -64,7 +70,7 @@ class App extends React.Component {
                 onValueChanged("tournaments", users);
             }
         }
-        request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+        request.open("POST", "https://cors-anywhere.herokuapp.com/http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
         request.send('{"action":"getTournament","arguments":{"active":1}}');
     }
 
