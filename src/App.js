@@ -68,7 +68,7 @@ class App extends React.Component {
                     <div className="App-content">
                         { page === menu.TOURNAMENTS && <Tournaments /> }
                         { page === menu.TEAMS && <Teams /> }
-                        { page === menu.PLAYERS && <Players users={this.state.users} /> }
+                        { page === menu.PLAYERS && <Players users={this.state.users} appOnValueChanged={this.onValueChanged} /> }
                     </div>
                 </header>
             </div>

@@ -9,6 +9,99 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import MenuItem from '@material-ui/core/MenuItem';
 import TextField from '@material-ui/core/TextField';
 
+class Delete extends React.Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            showModal: false,
+            email: props.player.email,
+            nick: props.player.nick,
+        };
+
+        this.open = this.open.bind(this);
+        this.close = this.close.bind(this);
+        this.onValueChanged = this.onValueChanged.bind(this);
+        this.delete = this.delete.bind(this);
+    }
+
+    onValueChanged(key, value) {
+        this.setState({ [key]: value });
+    }
+
+    close() {
+        this.setState({ showModal: false, dialogError: undefined });
+    }
+
+    open() {
+        this.setState({ showModal: true });
+    }
+
+    delete() {
+        const appOnValueChanged = this.props.appOnValueChanged;
+        const { email, nick } = this.state;
+        const data = { email, nick, active: 0 };
+        const call = {
+            action: "editPlayer",
+            arguments: data
+        };
+        const callStr = JSON.stringify(call);
+
+        const request= new XMLHttpRequest();
+        request.onreadystatechange = function() {
+            if (this.readyState === 4 && this.status === 200) {
+                console.log(this.responseText);
+                const response = JSON.parse(this.responseText);
+
+                if (response.result) {
+                    appOnValueChanged("loggedUser", null);
+                    const request= new XMLHttpRequest();
+                    request.onreadystatechange = function() {
+                        if (this.readyState === 4 && this.status === 200) {
+                            const users = JSON.parse(this.responseText);
+                            appOnValueChanged("users", users);
+                        }
+                    }
+                    request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+                    request.send('{"action":"getPlayer","arguments":{"active":1}}');
+                }
+            }
+        }
+        request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+        console.log(callStr);
+        request.send(callStr);
+    }
+
+    render() {
+        const id = this.props.id + "-delete-player";
+
+        return (
+            <>
+                <Button onClick={this.open} color="secondary">Delete</Button>
+                <Dialog open={this.state.showModal}
+                    onClose={this.close}
+                    aria-labelledby={id + "-dialog"}
+                    maxWidth={'sm'}
+                    fullWidth
+                >
+                    <DialogTitle id={id + "-dialog-title"}>Account Deletion</DialogTitle>
+                    <DialogContent>
+                        Do you really wish to delete your profile?
+                    </DialogContent>
+                    <DialogActions>
+                        <Button id={id + "-action-close"} onClick={this.close} color="default">
+                            Close
+                        </Button>
+                        <Button id={id + "-action-delete"} onClick={this.delete} color="secondary">
+                            Delete
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            </>
+        );
+    }
+}
+
 class Logout extends React.Component {
     constructor(props) {
         super(props);
@@ -81,7 +174,7 @@ class EditProfile extends React.Component {
             nick: props.loggedUser.nick,
             name: props.loggedUser.name,
             surname: props.loggedUser.surname,
-            password: props.loggedUser.surname,
+            password: "",
             gender: props.loggedUser.gender,
             birthDate: props.loggedUser.birthDate,
             country: props.loggedUser.country,
@@ -111,7 +204,9 @@ class EditProfile extends React.Component {
     editProfile() {
         const appOnValueChanged = this.props.appOnValueChanged;
         const { email, nick, name, surname, password, gender, birthDate, country } = this.state;
-        const data = { email, nick, name, surname, password, gender, birthDate, country };
+        const data = { email, nick, name, surname, gender, birthDate, country };
+        if (password.length > 0)
+            data.password = password;
         const call = {
             action: "editPlayer",
             arguments: data
@@ -540,6 +635,7 @@ const UserPanel = ({ appOnValueChanged, loggedUser }) => {
         <Box display="flex" m={1} p={1} bgcolor="background.paper" css={{ float: "right" }}>
             <EditProfile id={id} appOnValueChanged={appOnValueChanged} loggedUser={loggedUser} />
             <Logout id={id} appOnValueChanged={appOnValueChanged} />
+            <Delete id={id} appOnValueChanged={appOnValueChanged} player={loggedUser} />
         </Box>
     );
 }
