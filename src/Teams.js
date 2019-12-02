@@ -15,23 +15,7 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import TextField from '@material-ui/core/TextField';
 import Grid from '@material-ui/core/Grid';
 
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
-import ListItemText from '@material-ui/core/ListItemText';
-import Checkbox from '@material-ui/core/Checkbox';
-
 import './styles.css';
-
-function getTeams() {
-    // TODO api call to get teams
-
-    // API returns JSON string like this:
-    const teamsJSON = '[{"id":1,"name":"Ninjas in Pyjamas","funded":"08-10-2018","players":["PashaBiceps","ZywOo","s1mple","XANTARES","Kaze"],"requests":["KSCERATO","Sico"]},' +
-                       '{"id":2,"name":"Furia Esports","funded":"02-12-2015","players":["coldzera","BnTeT","Sico","KSCERATO","device"],"requests":[]}]';
-
-    return JSON.parse(teamsJSON);
-}
 
 const TeamBody = ({ id, state, onValueChanged }) => {
     return (<>
@@ -77,13 +61,39 @@ class CreateTeam extends React.Component {
     }
 
     create() {
-        const { name, players } = this.state;
-        const data = { name, players };
-        const jsonStr = JSON.stringify(data);
+        const appOnValueChanged = this.props.appOnValueChanged;
+        const onValueChanged = this.onValueChanged;
+        const { name} = this.state;
+        const data = { email: this.props.loggedUser.email, name };
+        const call = {
+            action: "createTeam",
+            arguments: data
+        };
+        const callStr = JSON.stringify(call);
 
-        console.log("Create Team API. Passed data:");
-        console.log(jsonStr);
-        // TODO backend
+        const request= new XMLHttpRequest();
+        request.onreadystatechange = function() {
+            if (this.readyState === 4 && this.status === 200) {
+                console.log(this.responseText);
+                const response = JSON.parse(this.responseText);
+
+                if (response.result) {
+                    const request= new XMLHttpRequest();
+                    request.onreadystatechange = function() {
+                        if (this.readyState === 4 && this.status === 200) {
+                            const teams = JSON.parse(this.responseText);
+                            appOnValueChanged("teams", teams);
+                        }
+                    }
+                    request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+                    request.send('{"action":"getTeam","arguments":{"active":1}}');
+                } else {
+                    onValueChanged("errorMessage", response.message);
+                }
+            }
+        }
+        request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+        request.send(callStr);
     }
 
     render() {
@@ -102,6 +112,10 @@ class CreateTeam extends React.Component {
                         <TeamBody id={id}
                             state={this.state}
                             onValueChanged={this.onValueChanged} />
+                        <span style={{ color: "red" }}>
+                            { this.state.errorMessage && (<br />) }
+                            { this.state.errorMessage }
+                        </span>
                     </DialogContent>
                     <DialogActions>
                         <Button id={id + "-action-close"} onClick={this.close} color="default">
@@ -109,136 +123,6 @@ class CreateTeam extends React.Component {
                         </Button>
                         <Button id={id + "-action-create"} onClick={this.create} color="primary">
                             Create
-                        </Button>
-                    </DialogActions>
-                </Dialog>
-            </>
-        );
-    }
-}
-
-class RequestsTeam extends React.Component {
-    constructor(props) {
-        super(props);
-
-        this.state = {
-            showModal: false,
-            players: props.team.players,
-            selected: [],
-            requests: props.team.requests,
-        };
-
-        this.open = this.open.bind(this);
-        this.close = this.close.bind(this);
-        this.accept = this.accept.bind(this);
-        this.deny = this.deny.bind(this);
-    }
-
-    close() {
-        this.setState({ showModal: false, dialogError: undefined });
-    }
-
-    open() {
-        this.setState({ showModal: true });
-    }
-
-    accept() {
-        const selected = this.state.selected;
-        const id = this.props.team.id;
-        const data = { id, selected };
-        const jsonStr = JSON.stringify(data);
-
-        console.log("Requests Team Accepted API. Passed data:");
-        console.log(jsonStr);
-
-        const newRequests = [];
-
-        this.props.team.requests.forEach(req => {
-            if (!selected.includes(req))
-                newRequests.push(req);
-        });
-        console.log(newRequests);
-        this.setState({ requests: newRequests });
-      // TODO backend
-    }
-
-    deny() {
-        const selected = this.state.selected;
-        const id = this.props.team.id;
-        const data = { id, selected };
-        const jsonStr = JSON.stringify(data);
-
-        console.log("Requests Team Declined API. Passed data:");
-        console.log(jsonStr);
-        // TODO backend
-
-        const newRequests = [];
-
-        this.props.team.requests.forEach(req => {
-            if (!selected.includes(req))
-                newRequests.push(req);
-        });
-        this.setState({ requests: newRequests });
-    }
-
-    render() {
-        const team = this.props.team;
-        const id = team.id + "-requests";
-
-        const handleToggle = value => () => {
-          const currentIndex = this.state.selected.indexOf(value);
-          const newChecked = [...this.state.selected];
-
-          if (currentIndex === -1)
-            newChecked.push(value);
-          else
-            newChecked.splice(currentIndex, 1);
-
-          this.setState({ selected: newChecked });
-        };
-
-        return (
-            <>
-                <Button onClick={this.open} variant="contained" disabled={team.requests.length === 0} color={team.requests.length ? "primary" : "default"}>{team.requests.length} Requests</Button>
-                <Dialog open={this.state.showModal}
-                    onClose={this.close}
-                    aria-labelledby={id + "-modal"}
-                    maxWidth={'sm'}
-                    fullWidth
-                >
-                    <DialogTitle id={id + "-modal-title"}>Players Requesting Team Membership</DialogTitle>
-                    <DialogContent>
-                        <List>
-                          {this.state.requests.map(value => {
-                            const labelId = `checkbox-list-label-${value}`;
-
-                            return (
-                              <ListItem key={value} role={undefined} dense button onClick={handleToggle(value)}>
-                                <ListItemText id={labelId} primary={`${value}`} />
-                                <ListItemSecondaryAction>
-                                  <Checkbox
-                                    edge="start"
-                                    checked={this.state.selected.indexOf(value) !== -1}
-                                    onChange={handleToggle(value)}
-                                    tabIndex={-1}
-                                    disableRipple
-                                    inputProps={{ 'aria-labelledby': labelId }}
-                                  />
-                                </ListItemSecondaryAction>
-                              </ListItem>
-                            );
-                          })}
-                        </List>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button id={id + "-action-close"} onClick={this.close} color="default">
-                            Close
-                        </Button>
-                        <Button id={id + "-action-accept"} onClick={this.accept} color="primary">
-                            Accept Selected
-                        </Button>
-                        <Button id={id + "-action-deny"} onClick={this.deny} color="secondary">
-                            Deny Selected
                         </Button>
                     </DialogActions>
                 </Dialog>
@@ -276,14 +160,43 @@ class EditTeam extends React.Component {
     }
 
     save() {
-        const { name, players } = this.state;
-        const id = this.props.team.id;
-        const data = { id, name, players };
-        const jsonStr = JSON.stringify(data);
+        const appOnValueChanged = this.props.appOnValueChanged;
+        const onValueChanged = this.onValueChanged;
+        const { name} = this.state;
+        if (name !== this.props.team.name) {
+            const data = { name: this.props.team.name, newName: name };
+            const call = {
+                action: "editTeam",
+                arguments: data
+            };
+            const callStr = JSON.stringify(call);
 
-        console.log("Edit Team API. Passed data:");
-        console.log(jsonStr);
-        // TODO backend
+            const request= new XMLHttpRequest();
+            request.onreadystatechange = function() {
+                if (this.readyState === 4 && this.status === 200) {
+                    console.log(this.responseText);
+                    const response = JSON.parse(this.responseText);
+
+                    if (response.result) {
+                        const request= new XMLHttpRequest();
+                        request.onreadystatechange = function() {
+                            if (this.readyState === 4 && this.status === 200) {
+                                const teams = JSON.parse(this.responseText);
+                                appOnValueChanged("teams", teams);
+                            }
+                        }
+                        request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+                        request.send('{"action":"getTeam","arguments":{"active":1}}');
+                    } else {
+                        onValueChanged("errorMessage", response.message);
+                    }
+                }
+            }
+            request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+            console.log(callStr);
+            request.send(callStr);
+        }
+        this.close();
     }
 
     render() {
@@ -309,6 +222,96 @@ class EditTeam extends React.Component {
                         </Button>
                         <Button id={id + "-action-save"} onClick={this.save} color="primary">
                             Save
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            </>
+        );
+    }
+}
+
+class LeaveTeam extends React.Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            showModal: false,
+        };
+
+        this.open = this.open.bind(this);
+        this.close = this.close.bind(this);
+        this.onValueChanged = this.onValueChanged.bind(this);
+        this.join = this.join.bind(this);
+    }
+
+    onValueChanged(key, value) {
+        this.setState({ [key]: value });
+    }
+
+    close() {
+        this.setState({ showModal: false, dialogError: undefined });
+    }
+
+    open() {
+        this.setState({ showModal: true });
+    }
+
+    join() {
+        const appOnValueChanged = this.props.appOnValueChanged;
+        const onValueChanged = this.onValueChanged;
+        const data = { email: this.props.loggedUser.email, team: this.props.team.name };
+        const call = {
+            action: "leaveTeam",
+            arguments: data
+        };
+        const callStr = JSON.stringify(call);
+
+        const request= new XMLHttpRequest();
+        request.onreadystatechange = function() {
+            if (this.readyState === 4 && this.status === 200) {
+                console.log(this.responseText);
+                const response = JSON.parse(this.responseText);
+
+                if (response.result) {
+                    const request= new XMLHttpRequest();
+                    request.onreadystatechange = function() {
+                        if (this.readyState === 4 && this.status === 200) {
+                            const teams = JSON.parse(this.responseText);
+                            appOnValueChanged("teams", teams);
+                        }
+                    }
+                    request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+                    request.send('{"action":"getTeam","arguments":{"active":1}}');
+                } else {
+                    onValueChanged("errorMessage", response.message);
+                }
+            }
+        }
+        request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+        request.send(callStr);
+    }
+
+    render() {
+        const id = this.props.team.id + "-join";
+        return (
+            <>
+                <Button onClick={this.open} variant="contained" color="secondary">Leave</Button>
+                <Dialog open={this.state.showModal}
+                    onClose={this.close}
+                    aria-labelledby={id + "-modal"}
+                    maxWidth={'sm'}
+                    fullWidth
+                >
+                    <DialogTitle id={id + "-modal-title"}>Leave Team</DialogTitle>
+                    <DialogContent>
+                        Leave this team?
+                    </DialogContent>
+                    <DialogActions>
+                        <Button id={id + "-action-close"} onClick={this.close} color="default">
+                            Close
+                        </Button>
+                        <Button id={id + "-action-join"} onClick={this.join} color="secondary">
+                            Leave
                         </Button>
                     </DialogActions>
                 </Dialog>
@@ -344,12 +347,38 @@ class JoinTeam extends React.Component {
     }
 
     join() {
-        const data = { id: this.props.team.id };
-        const jsonStr = JSON.stringify(data);
+        const appOnValueChanged = this.props.appOnValueChanged;
+        const onValueChanged = this.onValueChanged;
+        const data = { email: this.props.loggedUser.email, team: this.props.team.name };
+        const call = {
+            action: "joinTeam",
+            arguments: data
+        };
+        const callStr = JSON.stringify(call);
 
-        console.log("Join Team API. Passed data:");
-        console.log(jsonStr);
-        // TODO backend
+        const request= new XMLHttpRequest();
+        request.onreadystatechange = function() {
+            if (this.readyState === 4 && this.status === 200) {
+                console.log(this.responseText);
+                const response = JSON.parse(this.responseText);
+
+                if (response.result) {
+                    const request= new XMLHttpRequest();
+                    request.onreadystatechange = function() {
+                        if (this.readyState === 4 && this.status === 200) {
+                            const teams = JSON.parse(this.responseText);
+                            appOnValueChanged("teams", teams);
+                        }
+                    }
+                    request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+                    request.send('{"action":"getTeam","arguments":{"active":1}}');
+                } else {
+                    onValueChanged("errorMessage", response.message);
+                }
+            }
+        }
+        request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+        request.send(callStr);
     }
 
     render() {
@@ -365,79 +394,14 @@ class JoinTeam extends React.Component {
                 >
                     <DialogTitle id={id + "-modal-title"}>Request Team Membership</DialogTitle>
                     <DialogContent>
-                        Submit a request to join this team?
+                        Join this team?
                     </DialogContent>
                     <DialogActions>
                         <Button id={id + "-action-close"} onClick={this.close} color="default">
                             Close
                         </Button>
                         <Button id={id + "-action-join"} onClick={this.join} color="secondary">
-                            Submit
-                        </Button>
-                    </DialogActions>
-                </Dialog>
-            </>
-        );
-    }
-}
-
-
-class DeleteTeam extends React.Component {
-    constructor(props) {
-        super(props);
-
-        this.state = {
-            showModal: false,
-        };
-
-        this.open = this.open.bind(this);
-        this.close = this.close.bind(this);
-        this.onValueChanged = this.onValueChanged.bind(this);
-        this.delete = this.delete.bind(this);
-    }
-
-    onValueChanged(key, value) {
-        this.setState({ [key]: value });
-    }
-
-    close() {
-        this.setState({ showModal: false, dialogError: undefined });
-    }
-
-    open() {
-        this.setState({ showModal: true });
-    }
-
-    delete() {
-        const data = { id: this.props.team.id };
-        const jsonStr = JSON.stringify(data);
-
-        console.log("Delete Team API. Passed data:");
-        console.log(jsonStr);
-        // TODO backend
-    }
-
-    render() {
-        const id = this.props.team.id + "-delete";
-        return (
-            <>
-                <Button onClick={this.open} variant="contained" color="secondary">Delete</Button>
-                <Dialog open={this.state.showModal}
-                    onClose={this.close}
-                    aria-labelledby={id + "-modal"}
-                    maxWidth={'sm'}
-                    fullWidth
-                >
-                    <DialogTitle id={id + "-modal-title"}>Delete Team</DialogTitle>
-                    <DialogContent>
-                        Do you really wish to delete this team?
-                    </DialogContent>
-                    <DialogActions>
-                        <Button id={id + "-action-close"} onClick={this.close} color="default">
-                            Close
-                        </Button>
-                        <Button id={id + "-action-delete"} onClick={this.delete} color="secondary">
-                            Delete
+                           Join 
                         </Button>
                     </DialogActions>
                 </Dialog>
@@ -450,10 +414,6 @@ export default class Teams extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = {
-            teams: getTeams()
-        };
-
         this.onValueChanged = this.onValueChanged.bind(this);
     }
 
@@ -463,10 +423,11 @@ export default class Teams extends React.Component {
 
     render() {
         const TeamPanel = (team) => {
-            const playersStr = team.players.join(", ");
+            const players = team.players.map(p => p.nick);
+            const playersStr = players.join(", ");
 
             return (
-                <ExpansionPanel key={ team.id }>
+                <ExpansionPanel key={ team.name }>
                   <ExpansionPanelSummary
                     expandIcon={<ExpandMoreIcon />}
                     aria-controls="panel1c-content"
@@ -482,30 +443,35 @@ export default class Teams extends React.Component {
                             </tr>
                             <tr>
                               <td><b>Players:</b> { playersStr }</td>
-                              <td><b>Founded:</b> { team.funded }</td>
+                              <td><b>Founded:</b> { team.founded }</td>
                             </tr>
                         </tbody>
                       </table>
                   </ExpansionPanelDetails>
+                  {this.props.loggedUser &&
                   <ExpansionPanelActions>
-                      <RequestsTeam team={team}/>
-                      <JoinTeam team={team}/>
-                      <EditTeam team={team}/>
-                      <DeleteTeam team={team}/>
-                  </ExpansionPanelActions>
+                      {!players.includes(this.props.loggedUser.nick) &&
+                      <JoinTeam team={team} loggedUser={this.props.loggedUser} appOnValueChanged={this.props.appOnValueChanged}/>}
+                      {players.includes(this.props.loggedUser.nick) &&
+                      <LeaveTeam team={team} loggedUser={this.props.loggedUser} appOnValueChanged={this.props.appOnValueChanged}/>}
+                      {((this.props.loggedUser.email === team.founder) || (this.props.loggedUser.nick === "admin")) && <>
+                          <EditTeam team={team} appOnValueChanged={this.props.appOnValueChanged}/>
+                      </>}
+                  </ExpansionPanelActions>}
                 </ExpansionPanel>
             );
         };
 
-        const body = this.state.teams.map(team => TeamPanel(team));
+        const body = this.props.teams.map(team => TeamPanel(team));
 
         return (
             <Grid container spacing={3}>
+                {this.props.loggedUser &&
                 <Grid item xs={12}>
                     <Box display="flex" css={{ float: "right" }}>
-                        <CreateTeam />
+                        <CreateTeam loggedUser={this.props.loggedUser} appOnValueChanged={this.props.appOnValueChanged} />
                     </Box>
-                </Grid>
+                </Grid>}
                 <Grid item xs={12}>
                     { body }
                 </Grid>

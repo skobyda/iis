@@ -24,6 +24,8 @@ class App extends React.Component {
             page: 0,
             loggedUser: undefined,
             users: [],
+            teams: [],
+            tournaments: [],
         };
 
         this.onValueChanged = this.onValueChanged.bind(this);
@@ -35,7 +37,7 @@ class App extends React.Component {
 
     componentDidMount() {
         const onValueChanged = this.onValueChanged;
-        const request= new XMLHttpRequest();
+        let request= new XMLHttpRequest();
         request.onreadystatechange = function() {
             if (this.readyState === 4 && this.status === 200) {
                 const users = JSON.parse(this.responseText);
@@ -44,11 +46,32 @@ class App extends React.Component {
         }
         request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
         request.send('{"action":"getPlayer","arguments":{"active":1}}');
+
+        request= new XMLHttpRequest();
+        request.onreadystatechange = function() {
+            if (this.readyState === 4 && this.status === 200) {
+                const users = JSON.parse(this.responseText);
+                onValueChanged("teams", users);
+            }
+        }
+        request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+        request.send('{"action":"getTeam","arguments":{"active":1}}');
+
+        request= new XMLHttpRequest();
+        request.onreadystatechange = function() {
+            if (this.readyState === 4 && this.status === 200) {
+                const users = JSON.parse(this.responseText);
+                onValueChanged("tournaments", users);
+            }
+        }
+        request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
+        request.send('{"action":"getTournament","arguments":{"active":1}}');
     }
 
     render() {
-        const { loggedUser, page } = this.state;
+        const { loggedUser, page, users, tournaments, teams } = this.state;
 
+        console.log(this.state);
         return (
             <div className="App">
                 <div>
@@ -66,9 +89,9 @@ class App extends React.Component {
                 </div>
                 <header className="App-page">
                     <div className="App-content">
-                        { page === menu.TOURNAMENTS && <Tournaments /> }
-                        { page === menu.TEAMS && <Teams /> }
-                        { page === menu.PLAYERS && <Players users={this.state.users} appOnValueChanged={this.onValueChanged} /> }
+                        { page === menu.TOURNAMENTS && <Tournaments tournaments={tournaments} teams={teams} users={users} loggedUser={loggedUser} appOnValueChanged={this.onValueChanged} /> }
+                        { page === menu.TEAMS && <Teams tournaments={tournaments} teams={teams} users={users} loggedUser={loggedUser} appOnValueChanged={this.onValueChanged} /> }
+                        { page === menu.PLAYERS && <Players tournaments={tournaments} teams={teams} users={users} loggedUser={loggedUser} appOnValueChanged={this.onValueChanged} /> }
                     </div>
                 </header>
             </div>

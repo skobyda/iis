@@ -367,7 +367,8 @@ class Register extends React.Component {
             password: "",
             repeatPassword: "",
             gender: "",
-            birthDate: undefined
+            birthDate: undefined,
+            errorMessage: "",
         };
 
         this.open = this.open.bind(this);
@@ -389,6 +390,8 @@ class Register extends React.Component {
     }
 
     register() {
+        const onValueChanged = this.onValueChanged;
+        const close = this.close;
         const { email, password } = this.state;
         const data = { email, password };
         const call = {
@@ -400,7 +403,13 @@ class Register extends React.Component {
         const request= new XMLHttpRequest();
         request.onreadystatechange = function() {
             if (this.readyState === 4 && this.status === 200) {
-                console.log(this.responseText);
+                const response = JSON.parse(this.responseText);
+
+                if (response.result)
+                    close();
+                else
+                    onValueChanged("errorMessage", response.message);
+
             }
         }
         request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
@@ -435,14 +444,6 @@ class Register extends React.Component {
                             />
                         </Box>
                         <Box m={1} component="span" display="block">
-                            <TextField id={id + "-nick"}
-                                label="Nick"
-                                value={this.state.nick}
-                                onChange={e => this.onValueChanged("nick", e.target.value)}
-                                fullWidth
-                            />
-                        </Box>
-                        <Box m={1} component="span" display="block">
                             <TextField id={id + "-password"}
                                 label="Password"
                                 value={this.state.password}
@@ -460,34 +461,10 @@ class Register extends React.Component {
                                 fullWidth
                             />
                         </Box>
-                        <Box m={1} component="span" display="block">
-                            <TextField id={id + "-gender"}
-                                select
-                                label="Gender"
-                                value={this.state.gender}
-                                onChange={e => this.onValueChanged("gender", e.target.value)}
-                                fullWidth
-                            >
-                                <MenuItem key={"F"} value={"F"}>
-                                  {"Female"}
-                                </MenuItem>
-                                <MenuItem key={"M"} value={"M"}>
-                                  {"Male"}
-                                </MenuItem>
-                            </TextField>
-                        </Box>
-                        <Box m={1} component="span" display="block">
-                            <TextField id={id + "-birthDate"}
-                                label="Date of birth"
-                                type="date"
-                                value={this.state.birthDate}
-                                onChange={e => this.onValueChanged("birthDate", e.target.value)}
-                                InputLabelProps={{
-                                  shrink: true,
-                                }}
-                                fullWidth
-                            />
-                        </Box>
+                        <span style={{ color: "red" }}>
+                            { this.state.errorMessage && (<br />) }
+                            { this.state.errorMessage }
+                        </span>
                     </DialogContent>
                     <DialogActions>
                         <Button id={id + "-action-close"} onClick={this.close} color="default">
@@ -556,6 +533,7 @@ class Login extends React.Component {
                     const request= new XMLHttpRequest();
                     request.onreadystatechange = function() {
                         if (this.readyState === 4 && this.status === 200) {
+                            console.log(this.responseText);
                             const response = JSON.parse(this.responseText);
 
                             appOnValueChanged("loggedUser", response[0]);

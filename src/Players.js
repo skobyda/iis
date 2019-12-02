@@ -17,116 +17,6 @@ import TextField from '@material-ui/core/TextField';
 
 import './styles.css';
 
-function getPlayers() {
-    // TODO api call to get Players
-
-    // API returns JSON string like this:
-    const playersJSON = '[{"id":"PashaBiceps","fullName":"Jarosław Jarząbkowski","mail":"jaroslav.jarzabkowski@gmail.com","createdAt":"07-11-2017 20:22","countryCode":"PL","born":"11-04-1988","sex":"M","refereeRat":8,"actualPRank":1,"highestPRank":1,"teams":["Ninjas in Pyjamas"]},' +
-                        '{"id":"ZywOo","fullName":"Jarosław Jarząbkowski","mail":"jaroslav.jarzabkowski@gmail.com","createdAt":"07-11-2017 20:22","countryCode":"PL","born":"11-04-1988","sex":"M","refereeRat":8,"actualPRank":1,"highestPRank":1,"teams":["Ninjas in Pyjamas"]},' +
-                        '{"id":"s1mple","fullName":"Jarosław Jarząbkowski","mail":"jaroslav.jarzabkowski@gmail.com","createdAt":"07-11-2017 20:22","countryCode":"PL","born":"11-04-1988","sex":"M","refereeRat":8,"actualPRank":1,"highestPRank":1,"teams":["Ninjas in Pyjamas"]},' +
-                        '{"id":"XANTARES","fullName":"Jarosław Jarząbkowski","mail":"jaroslav.jarzabkowski@gmail.com","createdAt":"07-11-2017 20:22","countryCode":"PL","born":"11-04-1988","sex":"M","refereeRat":8,"actualPRank":1,"highestPRank":1,"teams":["Ninjas in Pyjamas"]},' +
-                        '{"id":"Kaze","fullName":"Jarosław Jarząbkowski","mail":"jaroslav.jarzabkowski@gmail.com","createdAt":"07-11-2017 20:22","countryCode":"PL","born":"11-04-1988","sex":"M","refereeRat":8,"actualPRank":1,"highestPRank":1,"teams":["Ninjas in Pyjamas"]},' +
-                        '{"id":"coldzera","fullName":"Jarosław Jarząbkowski","mail":"jaroslav.jarzabkowski@gmail.com","createdAt":"07-11-2017 20:22","countryCode":"PL","born":"11-04-1988","sex":"M","refereeRat":8,"actualPRank":1,"highestPRank":1,"teams":["Furia Esports"]},' +
-                        '{"id":"BnTeT","fullName":"Jarosław Jarząbkowski","mail":"jaroslav.jarzabkowski@gmail.com","createdAt":"07-11-2017 20:22","countryCode":"PL","born":"11-04-1988","sex":"M","refereeRat":8,"actualPRank":1,"highestPRank":1,"teams":["Furia Esports"]},' +
-                        '{"id":"Sico","fullName":"Jarosław Jarząbkowski","mail":"jaroslav.jarzabkowski@gmail.com","createdAt":"07-11-2017 20:22","countryCode":"PL","born":"11-04-1988","sex":"M","refereeRat":8,"actualPRank":1,"highestPRank":1,"teams":["Furia Esports"]},' +
-                        '{"id":"KSCERATO","fullName":"Jarosław Jarząbkowski","mail":"jaroslav.jarzabkowski@gmail.com","createdAt":"07-11-2017 20:22","countryCode":"PL","born":"11-04-1988","sex":"M","refereeRat":8,"actualPRank":1,"highestPRank":1,"teams":["Furia Esports"]},' +
-                        '{"id":"device","fullName":"Jarosław Jarząbkowski","mail":"jaroslav.jarzabkowski@gmail.com","createdAt":"07-11-2017 20:22","countryCode":"PL","born":"11-04-1988","sex":"M","refereeRat":8,"actualPRank":1,"highestPRank":1,"teams":["Furia Esports"]}]';
-
-    return JSON.parse(playersJSON);
-}
-
-class Delete extends React.Component {
-    constructor(props) {
-        super(props);
-
-        this.state = {
-            showModal: false,
-            email: props.player.email,
-            nick: props.player.nick,
-        };
-
-        this.open = this.open.bind(this);
-        this.close = this.close.bind(this);
-        this.onValueChanged = this.onValueChanged.bind(this);
-        this.delete = this.delete.bind(this);
-    }
-
-    onValueChanged(key, value) {
-        this.setState({ [key]: value });
-    }
-
-    close() {
-        this.setState({ showModal: false, dialogError: undefined });
-    }
-
-    open() {
-        this.setState({ showModal: true });
-    }
-
-    delete() {
-        const appOnValueChanged = this.props.appOnValueChanged;
-        const { email, nick } = this.state;
-        const data = { email, nick, active: 0 };
-        const call = {
-            action: "editPlayer",
-            arguments: data
-        };
-        const callStr = JSON.stringify(call);
-
-        const request= new XMLHttpRequest();
-        request.onreadystatechange = function() {
-            if (this.readyState === 4 && this.status === 200) {
-                console.log(this.responseText);
-                const response = JSON.parse(this.responseText);
-
-                if (response.result) {
-                    const request= new XMLHttpRequest();
-                    request.onreadystatechange = function() {
-                        if (this.readyState === 4 && this.status === 200) {
-                            const users = JSON.parse(this.responseText);
-                            appOnValueChanged("users", users);
-                        }
-                    }
-                    request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
-                    request.send('{"action":"getPlayer","arguments":{"active":1}}');
-                }
-            }
-        }
-        request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
-        console.log(callStr);
-        request.send(callStr);
-    }
-
-    render() {
-        const id = this.props.id + "-delete-player";
-
-        return (
-            <>
-                <Button onClick={this.open} variant="contained" color="secondary">Delete</Button>
-                <Dialog open={this.state.showModal}
-                    onClose={this.close}
-                    aria-labelledby={id + "-dialog"}
-                    maxWidth={'sm'}
-                    fullWidth
-                >
-                    <DialogTitle id={id + "-dialog-title"}>Delete User</DialogTitle>
-                    <DialogContent>
-                        Do you really wish to delete this player?
-                    </DialogContent>
-                    <DialogActions>
-                        <Button id={id + "-action-close"} onClick={this.close} color="default">
-                            Close
-                        </Button>
-                        <Button id={id + "-action-delete"} onClick={this.delete} color="secondary">
-                            Delete
-                        </Button>
-                    </DialogActions>
-                </Dialog>
-            </>
-        );
-    }
-}
-
 class Edit extends React.Component {
     constructor(props) {
         super(props);
@@ -166,6 +56,7 @@ class Edit extends React.Component {
 
     edit() {
         const appOnValueChanged = this.props.appOnValueChanged;
+        const onValueChanged = this.onValueChanged;
         const { email, nick, name, surname, password, gender, birthDate, country } = this.state;
         const data = { email, nick, name, surname, gender, birthDate, country };
         if (password.length > 0)
@@ -192,6 +83,8 @@ class Edit extends React.Component {
                     }
                     request.open("POST", "http://www.stud.fit.vutbr.cz/~xholas09/IIS/backend_api.php", true);
                     request.send('{"action":"getPlayer","arguments":{"active":1}}');
+                } else {
+                    onValueChanged("errorMessage", response.message);
                 }
             }
         }
@@ -293,6 +186,11 @@ class Edit extends React.Component {
                                 fullWidth
                             />
                         </Box>
+                        <span style={{ color: "red" }}>
+                            { this.state.errorMessage && (<br />) }
+                            { this.state.errorMessage }
+                        </span>
+
                     </DialogContent>
                     <DialogActions>
                         <Button id={id + "-action-close"} onClick={this.close} color="default">
@@ -312,10 +210,6 @@ export default class Players extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = {
-            players: getPlayers()
-        };
-
         this.onValueChanged = this.onValueChanged.bind(this);
     }
 
@@ -327,6 +221,8 @@ export default class Players extends React.Component {
         const id = "edit-user";
 
         const PlayerPanel = (player) => {
+            if (!player.nick)
+                return null;
             const teams = player.teams;
             let teamsStr;
             if (teams)
@@ -368,15 +264,15 @@ export default class Players extends React.Component {
                         </tbody>
                       </table>
                   </ExpansionPanelDetails>
+                  {this.props.loggedUser &&
                   <ExpansionPanelActions>
-                      <Edit id={id} player={player} appOnValueChanged={this.props.appOnValueChanged} />
-                      <Delete id={id} player={player} appOnValueChanged={this.props.appOnValueChanged} />
-                  </ExpansionPanelActions>
+                      {((this.props.loggedUser.email === player.email) || (this.props.loggedUser.nick === "admin")) &&
+                      <Edit id={id} player={player} appOnValueChanged={this.props.appOnValueChanged} />}
+                  </ExpansionPanelActions>}
                 </ExpansionPanel>
             );
         };
 
-        // const body = this.state.players.map(player => PlayerPanel(player));
         const body = this.props.users.map(player => PlayerPanel(player));
 
         return(
